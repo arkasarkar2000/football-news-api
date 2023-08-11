@@ -16,9 +16,9 @@ The API provides the following endpoints:
 
 - `/news`: Get the list of websites from where news is coming.
 - `/news/onefootball`: Get the latest football news from OneFootball.
-- `/news/espn`: Get the latest football news from ESPN.
-- `/news/90mins`: Get the latest football news from 90mins.
-- `/news/goal`: Get the latest football news from Goal.
+- `/news/espn`: Get the latest football news from ESPN. [Provides Images of the news]
+- `/news/90mins`: Get the latest football news from 90mins. [Provides Images of the news]
+- `/news/goal`: Get the latest football news from Goal. [Provides Images of the news]
 
 ## Usage
 
