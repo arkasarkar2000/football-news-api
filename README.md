@@ -28,16 +28,16 @@ Here's an example of how to use the API using cURL:
 
 ```bash
 # Get the list of websites
-curl https://your-api-url/news
+curl https://footballnewsapi.netlify.app/.netlify/functions/api/news
 
 # Get the latest football news from OneFootball
-curl https://your-api-url/news/onefootball
+curl https://footballnewsapi.netlify.app/.netlify/functions/api/news/onefootball
 
 # Get the latest football news from ESPN
-curl https://your-api-url/news/espn
+curl https://footballnewsapi.netlify.app/.netlify/functions/api/news/espn
 
 # Get the latest football news from 90mins
-curl https://your-api-url/news/90mins
+curl https://footballnewsapi.netlify.app/.netlify/functions/api/news/90mins
 
 # Get the latest football news from Goal
-curl https://your-api-url/news/goal
+curl https://footballnewsapi.netlify.app/.netlify/functions/api/news/goal
