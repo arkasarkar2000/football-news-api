@@ -1,8 +1,11 @@
 const express = require('express')
 const PORT = 8000 || process.env.PORT
-const cors = require('cors')
 const cheerio = require('cheerio')
 const axios = require('axios')
+const serverless = require('serverless-http')
+
+const app = express()
+const router = express.Router()
 
 const news_array_ninenine = []
 const news_array_onefootball = []
@@ -12,18 +15,16 @@ const news_array_goaldotcom = []
 const news_websites = [
     {title: "90mins"},
     {title:"One Football"},
-    {title: "ESPN"}
+    {title: "ESPN"},
+    {title: "GOAL"}
 ]
 
-const app = express()
-app.use(cors())
 
-
-app.get('/news',(req,res)=>{
+router.get('/news',(req,res)=>{
     res.json(news_websites)
 })
 
-app.get('/news/90mins',(req,res)=>{
+router.get('/news/90mins',(req,res)=>{
     axios.get("https://www.90min.com/categories/football-news")
     .then((response)=>{
         const html = response.data
@@ -54,7 +55,7 @@ app.get('/news/90mins',(req,res)=>{
     }).catch((err)=>console.log(err))
 })
 
-app.get('/news/onefootball',(req,res)=>{
+router.get('/news/onefootball',(req,res)=>{
     axios.get("https://onefootball.com/en/home")
     .then((response)=>{
         const html1 = response.data
@@ -80,7 +81,7 @@ app.get('/news/onefootball',(req,res)=>{
     }).catch((err)=>console.log(err))
 })
 
-app.get('/news/espn',(req,res)=>{
+router.get('/news/espn',(req,res)=>{
     axios.get("https://www.espn.in/football/")
     .then((response)=>{
         const html = response.data
@@ -104,7 +105,7 @@ app.get('/news/espn',(req,res)=>{
     }).catch((err)=>console.log(err))
 })
 
-app.get('/news/goal', (req,res)=>{
+router.get('/news/goal', (req,res)=>{
     axios.get("https://www.goal.com/en-in/news")
     .then((response)=>{
         const html = response.data
@@ -133,7 +134,7 @@ app.get('/news/goal', (req,res)=>{
     }).catch(err=>console.log(err))
 })
 
-/* app.get('/scores',(req,res)=>{
+/* router.get('/scores',(req,res)=>{
     axios.get("https://onefootball.com/en/matches")
     .then((response)=>{
         const html=response.data;
@@ -166,7 +167,7 @@ app.get('/news/goal', (req,res)=>{
 
 
 
-/* app.get('/scores',(req,res)=>{
+/* router.get('/scores',(req,res)=>{
     axios.get("https://www.goal.com/en-in/live-scores")
     .then((response)=>{
         const html = response.data
@@ -198,11 +199,9 @@ app.get('/news/goal', (req,res)=>{
 })
  */
 
-
-
-
-
-
-app.listen(PORT,()=>{
+/* router.listen(PORT,()=>{
     console.log(`Listening on ${PORT} port`)
-})
+}) */
+
+app.use('/.netlify/functions/api',router)
+module.exports.handler = serverless(app)
