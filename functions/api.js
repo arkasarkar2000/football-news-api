@@ -11,7 +11,7 @@ const news_array_ninenine = []
 const news_array_onefootball = []
 const news_array_espn = []
 const news_array_goaldotcom = []
-/* const scores_array = [] */
+
 const news_websites = [
     {title: "90mins"},
     {title:"One Football"},
@@ -33,14 +33,11 @@ router.get('/news/90mins',(req,res)=>{
         $('a',html).each(function(){
             const title = $(this).find("header").find("h3").text()
             const url = $(this).attr('href')
-            const news_img = $(this).find("img").attr('src')
 
             if(url.includes("posts") && title!==""){
                 news_array_ninenine.push({
                     title,
                     url,
-                    news_img
-                    /* news_img */
                 })
               }
            
@@ -134,74 +131,6 @@ router.get('/news/goal', (req,res)=>{
     }).catch(err=>console.log(err))
 })
 
-/* router.get('/scores',(req,res)=>{
-    axios.get("https://onefootball.com/en/matches")
-    .then((response)=>{
-        const html=response.data;
-        const $=cheerio.load(html);
-        $('li',html).each(function(){
-            const score_url = "https://onefootball.com" + $(this).find('a').attr('href')
-            const team1_name = $(this).find('span').eq(0).text()
-            const team1_logo = $(this).find('picture').eq(0).find('source').eq(0).attr('srcset')
-            const team2_name = $(this).find('span').eq(2).text()
-            const team2_logo = $(this).find('picture').eq(1).find('source').eq(0).attr('srcset')
-
-            const team1_score = $(this).find('span').eq(1).text()
-            const team2_score = $(this).find('span').eq(3).text()
-            if(score_url.includes('match')&& team1_logo!=="" && team2_logo!==""){
-                scores_array.push({
-                    score_url,
-                    team1_logo,
-                    team1_name,
-                    team1_score,
-                    team2_logo,
-                    team2_name,
-                    team2_score
-                })
-            }
-            
-        })
-        res.json(scores_array)
-    }).catch(err=>console.log(err))
-}) */
-
-
-
-/* router.get('/scores',(req,res)=>{
-    axios.get("https://www.goal.com/en-in/live-scores")
-    .then((response)=>{
-        const html = response.data
-        const $ = cheerio.load(html)
-
-        $("a",html).each(function(){
-            const match_url = $(this).attr("href")
-            const match_time_IST = $(this).find('time').text()
-            const t1_name = $(this).find("h4").eq(0).text()
-            const t2_name = $(this).find("h4").eq(1).text()
-            const t1_score = $(this).find("p").eq(0).text()
-            const t2_score = $(this).find("p").eq(2).text()
-            if (match_url.includes('match')){
-                scores_array.push({
-                    match_url,
-                    match_time_IST,
-                    t1_name,
-                    t1_score,
-                    t2_name,
-                    t2_score
-                })
-
-            }
-            
-
-        })
-        res.json(scores_array)
-    }).catch(err=>console.log(err))
-})
- */
-
-/* router.listen(PORT,()=>{
-    console.log(`Listening on ${PORT} port`)
-}) */
 
 app.use('/.netlify/functions/api',router)
 module.exports.handler = serverless(app)
