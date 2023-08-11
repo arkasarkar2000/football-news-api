@@ -1,3 +1,4 @@
+RapidAPI link: https://rapidapi.com/arkasarkar2000/api/football-news-aggregator-live
 # Football News API
 
 A Football News API that scrapes news data from various football websites using Cheerio and provides endpoints for users to fetch the latest football news. The API supports CORS and is built using Node.js, Cheerio, Axios, and Express.
