@@ -2,9 +2,10 @@
   "name": "football-news-api",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "/football-news-api/functions/api.js",
   "scripts": {
-      "build":"netlify deploy --prod"
+    "build": "netlify deploy --prod",
+    "start":"nodemon api.js"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +18,7 @@
     "heroku": "^8.1.9",
     "netlify-cli": "^15.11.0",
     "netlify-lambda": "^2.0.16",
+    "nodemon": "^3.0.2",
     "serverless-http": "^3.2.0"
   }
 }
