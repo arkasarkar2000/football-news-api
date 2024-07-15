@@ -35,17 +35,26 @@ router.get("/news/90mins", (req, res) => {
       const html = response.data;
       const $ = cheerio.load(html);
 
+      const validUrlPatterns = [
+        /^https:\/\/www\.90min\.com\/[a-z0-9-]+$/,
+        /^https:\/\/www\.90min\.com\/features\/[a-z0-9-]+$/,
+      ];
+
       $("a", html).each(function () {
         const title = $(this).find("header").find("h3").text();
         const url = $(this).attr("href");
-
-        if (url.includes("posts") && title !== "") {
+        console.log(url, 8888888);
+        const isValidUrl = validUrlPatterns.some((pattern) =>
+          pattern.test(url)
+        );
+        if (isValidUrl && title !== "") {
           news_array_ninenine.push({
             title,
             url,
           });
         }
       });
+
       res.json(news_array_ninenine);
     })
     .catch((err) => console.log(err));
@@ -87,6 +96,7 @@ router.get("/news/espn", (req, res) => {
         const title = $(this).find("h2").text();
         const url = "https://www.espn.in" + $(this).attr("href");
         const img = $(this).find("img").attr("data-default-src");
+
         if (url.includes("story") && title !== "") {
           news_array_espn.push({
             title,
@@ -112,8 +122,8 @@ router.get("/news/goal", (req, res) => {
           `^\\s+|(${wordsToRemove.join("|")}|[^a-zA-Z0-9\\s\\-.])`,
           "gi"
         );
-        const url = "https://goal.com/" + $(this).find("a").attr("href");
-        const title = $(this).find("span").text();
+        const url = "https://goal.com" + $(this).find("a").attr("href");
+        const title = $(this).find("h3").text();
         const news_img = $(this).find("img").attr("src");
         const modifiedTitle = title.replace(pattern, "");
         const modifiedTitle2 = modifiedTitle.replace("CC", "");
@@ -122,7 +132,9 @@ router.get("/news/goal", (req, res) => {
           ""
         );
 
-        if (url.includes("news", "lists") && title !== "") {
+        console.log(title,"88888");
+
+        if (url.includes("lists") && title !== "") {
           news_array_goaldotcom.push({
             url,
             modifiedTitle3,
@@ -267,6 +279,6 @@ router.get("/news/fourfourtwo/bundesliga", (req, res) => {
 app.use("/.netlify/functions/api", router);
 module.exports.handler = serverless(app);
 
-// app.listen(PORT, () => {
-//   console.log(`Server is running on http://localhost:${PORT}`);
-// });
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
