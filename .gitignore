@@ -2,3 +2,4 @@ node_modules/
 example.http
 # Local Netlify folder
 .netlify
+.vercel

@@ -2,10 +2,10 @@
   "name": "football-news-api",
   "version": "1.0.0",
   "description": "",
-  "main": "/football-news-api/functions/api.js",
+  "main": "api/api.js",
   "scripts": {
-    "build": "netlify deploy --prod",
-    "start":"nodemon api.js"
+    "start": "vercel dev",
+    "dev": "nodemon api/api.js"
   },
   "keywords": [],
   "author": "",

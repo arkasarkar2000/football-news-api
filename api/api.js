@@ -132,7 +132,7 @@ router.get("/news/goal", (req, res) => {
           ""
         );
 
-        console.log(title,"88888");
+        console.log(title, "88888");
 
         if (url.includes("lists") && title !== "") {
           news_array_goaldotcom.push({
@@ -276,9 +276,5 @@ router.get("/news/fourfourtwo/bundesliga", (req, res) => {
     .catch((err) => console.log(err));
 });
 
-app.use("/.netlify/functions/api", router);
+app.use("/api", router);
 module.exports.handler = serverless(app);
-
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-});
