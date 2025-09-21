@@ -324,14 +324,16 @@ router.get("/news/fourfourtwo/bundesliga", async (req, res) => {
 
 app.use("/api/v2", router);
 app.use("/api/v2", limiter);
-// module.exports.handler = serverless(app);
-// module.exports = { handler: serverless(app), app };
-// middleware to log time,method and ip address from each request
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   next();
 });
+module.exports.handler = serverless(app);
+// module.exports = { handler: serverless(app), app };
+// middleware to log time,method and ip address from each request
 
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+
+// for local development
+// app.listen(PORT, () => {
+//   console.log(`Server running at http://localhost:${PORT}`);
+// });
