@@ -28,7 +28,7 @@ const limiter = rateLimit({
   message: {
     success: false,
     error: true,
-    message: "Too many requests, please try again later."
+    message: "Too many requests, slow down."
   }
 });
 router.get("/news", (req, res) => {
@@ -320,6 +320,17 @@ router.get("/news/fourfourtwo/bundesliga", async (req, res) => {
     console.error("Error scraping FourFourTwo Bundesliga:", err.message);
     errorResponse(res, err)
   }
+});
+
+
+//**for checking purposeee!
+router.get("/health", (req, res) => {
+  res.status(200).json({
+    success: true,
+    status: "ok",
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+  });
 });
 
 app.use("/api/v2", router);
