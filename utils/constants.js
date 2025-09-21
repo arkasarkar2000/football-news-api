@@ -1,4 +1,4 @@
-export const URLLISTS = {
+const URLLISTS = {
     ninetymins: "https://www.si.com/soccer/archive",
     onefootball: "https://onefootball.com/en/home",
     espn: "https://www.espn.in/football/",
@@ -9,7 +9,7 @@ export const URLLISTS = {
     fourfourtwobund: "https://www.fourfourtwo.com/bundesliga"
 }
 
-export const cacheKeys = {
+const cacheKeys = {
     ninetymins: "ninetymins-news",
     onefootball: "onefootball-news",
     espn: "espn-news",
@@ -19,3 +19,8 @@ export const cacheKeys = {
     fourfourtwoucl: "fourfourtwo-ucl-news",
     fourfourtwobund: "fourfourtwo-bundesliga-news"
 };
+
+
+module.exports = {
+    URLLISTS,cacheKeys
+}

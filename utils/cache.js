@@ -1,13 +1,13 @@
 const cache = new Map();
 
-export const setCache = (key, data, ttlMs = 5 * 60 * 1000) => {
+const setCache = (key, data, ttlMs = 5 * 60 * 1000) => {
     cache.set(key, {
         data,
         expiry: Date.now() + ttlMs
     });
 };
 
-export const getCache = (key) => {
+const getCache = (key) => {
     const entry = cache.get(key);
     if (!entry) return null;
 
@@ -17,4 +17,9 @@ export const getCache = (key) => {
     }
 
     return entry.data;
+};
+
+
+module.exports = {
+    setCache, getCache
 };
