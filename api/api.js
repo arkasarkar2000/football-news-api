@@ -3,278 +3,335 @@ const PORT = 8000 || process.env.PORT;
 const cheerio = require("cheerio");
 const axios = require("axios");
 const serverless = require("serverless-http");
+const rateLimit = require("express-rate-limit");
+const { news_websites,
+  news_array_espn,
+  news_array_fourfourtwo_bundesliga,
+  news_array_fourfourtwo_epl,
+  news_array_fourfourtwo_laliga,
+  news_array_fourfourtwo_ucl,
+  news_array_goaldotcom,
+  news_array_ninenine,
+  news_array_onefootball,
+  formatNewsItem,
+  successResponse,
+  errorResponse
+} = require("../utils/helper");
+const { URLLISTS, cacheKeys } = require("../utils/constants");
+const { getCache, setCache } = require("../utils/cache");
 
 const app = express();
 const router = express.Router();
-
-const news_array_ninenine = [];
-const news_array_onefootball = [];
-const news_array_espn = [];
-const news_array_goaldotcom = [];
-const news_array_fourfourtwo_epl = [];
-const news_array_fourfourtwo_laliga = [];
-const news_array_fourfourtwo_ucl = [];
-const news_array_fourfourtwo_bundesliga = [];
-
-const news_websites = [
-  { title: "90mins" },
-  { title: "One Football" },
-  { title: "ESPN" },
-  { title: "GOAL" },
-  { title: "FourFourtwo" },
-];
-
+const limiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 20, // limit each IP to 20 requests per windowMs
+  message: {
+    success: false,
+    error: true,
+    message: "Too many requests, please try again later."
+  }
+});
 router.get("/news", (req, res) => {
   res.json(news_websites);
 });
 
-router.get("/news/90mins", (req, res) => {
-  axios
-    .get("https://www.90min.com/categories/football-news")
-    .then((response) => {
-      const html = response.data;
-      const $ = cheerio.load(html);
+// 90mins
+router.get("/news/90mins", async (req, res) => {
+  try {
+    const cacheKey = cacheKeys.ninetymins;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return successResponse(res, cached, "cached");
+    }
+    const response = await axios.get(URLLISTS.ninetymins)
+    const html = response?.data
+    const $ = cheerio.load(html);
+    $("article").each(function () {
+      const title = $(this).find("h3").text().trim();
+      const url = $(this).find("a").attr("href");
+      const thumb = $(this).find('picture').find('img').attr('src')
+      if (url && title) {
+        const item = formatNewsItem({
+          title,
+          url,
+          image: thumb,
+          source: "90mins"
+        });
+        news_array_ninenine.push(item);
+      }
+    });
+    setCache(cacheKey, news_array_ninenine, 5 * 60 * 1000);
+    successResponse(res, news_array_ninenine)
+  } catch (err) {
+    console.error("Error:", err.message);
+    errorResponse(res, err)
+  }
+});
 
-      const validUrlPatterns = [
-        /^https:\/\/www\.90min\.com\/[a-z0-9-]+$/,
-        /^https:\/\/www\.90min\.com\/features\/[a-z0-9-]+$/,
-      ];
+// One Football
+router.get("/news/onefootball", async (req, res) => {
+  try {
+    const cacheKey = cacheKeys.onefootball;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return successResponse(res, cached, "cached");
+    }
+    const response = await axios.get(URLLISTS.onefootball);
+    const html = response.data;
+    const $ = cheerio.load(html);
 
-      $("a", html).each(function () {
-        const title = $(this).find("header").find("h3").text();
-        const url = $(this).attr("href");
-        console.log(url, 8888888);
-        const isValidUrl = validUrlPatterns.some((pattern) =>
-          pattern.test(url)
-        );
-        if (isValidUrl && title !== "") {
-          news_array_ninenine.push({
+    $("li").each(function () {
+      const title = $(this).find("a").eq(1).find("p").eq(0).text().trim();
+      const url = $(this).find("a").eq(1).attr("href");
+      const img = $(this).find("img").attr("src");
+
+      if (title && url) {
+        const item = formatNewsItem({
+          title,
+          url,
+          image: img,
+          source: "One Football"
+        });
+        news_array_onefootball.push(item);
+      }
+    });
+    setCache(cacheKey, news_array_onefootball, 5 * 60 * 1000);
+    successResponse(res, news_array_onefootball)
+  } catch (err) {
+    console.error("Error scraping OneFootball:", err.message);
+    errorResponse(res, err)
+  }
+});
+
+// ESPN
+router.get("/news/espn", async (req, res) => {
+  try {
+    const cacheKey = cacheKeys.espn;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return successResponse(res, cached, "cached");
+    }
+    const response = await axios.get(URLLISTS.espn);
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    $("a").each(function () {
+      const title = $(this).find("h2").text().trim();
+      const href = $(this).attr("href");
+      const img = $(this).find("img").attr("data-default-src");
+
+      if (href && title) {
+        const url = href.startsWith("http") ? href : `https://www.espn.in${href}`;
+        if (url.includes("story")) {
+          const item = formatNewsItem({
             title,
             url,
+            image: img,
+            source: "ESPN"
           });
+          news_array_espn.push(item);
         }
-      });
-
-      res.json(news_array_ninenine);
-    })
-    .catch((err) => console.log(err));
+      }
+    });
+    setCache(cacheKey, news_array_espn, 5 * 60 * 1000);
+    successResponse(res, news_array_espn)
+  } catch (err) {
+    console.error("Error scraping ESPN:", err.message);
+    errorResponse(res, err)
+  }
 });
 
-router.get("/news/onefootball", (req, res) => {
-  axios
-    .get("https://onefootball.com/en/home")
-    .then((response) => {
-      const html1 = response.data;
-      const $ = cheerio.load(html1);
-      $("li", html1).each(function () {
-        const title = $(this).find("a").eq(1).find("p").eq(0).text();
-        const url =
-          "https://onefootball.com" + $(this).find("a").eq(1).attr("href");
-        const img = $(this).find("img").attr("src");
+// GOAL.com
+router.get("/news/goal", async (req, res) => {
+  try {
+    const cacheKey = cacheKeys.goal;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return successResponse(res, cached, "cached");
+    }
+    news_array_goaldotcom.length = 0;
+    const response = await axios.get(URLLISTS.goal);
+    const html = response.data;
+    const $ = cheerio.load(html);
 
-        if (title !== "") {
-          news_array_onefootball.push({
-            title,
-            url,
-            img,
-          });
-        }
-      });
-      res.json(news_array_onefootball);
-    })
-    .catch((err) => console.log(err));
-});
-
-router.get("/news/espn", (req, res) => {
-  axios
-    .get("https://www.espn.in/football/")
-    .then((response) => {
-      const html = response.data;
-      const $ = cheerio.load(html);
-
-      $("a", html).each(function () {
-        const title = $(this).find("h2").text();
-        const url = "https://www.espn.in" + $(this).attr("href");
-        const img = $(this).find("img").attr("data-default-src");
-
-        if (url.includes("story") && title !== "") {
-          news_array_espn.push({
-            title,
-            url,
-            img,
-          });
-        }
-      });
-      res.json(news_array_espn);
-    })
-    .catch((err) => console.log(err));
-});
-
-router.get("/news/goal", (req, res) => {
-  axios
-    .get("https://www.goal.com/en-in/news")
-    .then((response) => {
-      const html = response.data;
-      const $ = cheerio.load(html);
-      $("li", html).each(function () {
-        const wordsToRemove = ["Getty", "Images", "/Goal"];
-        const pattern = new RegExp(
-          `^\\s+|(${wordsToRemove.join("|")}|[^a-zA-Z0-9\\s\\-.])`,
-          "gi"
-        );
-        const url = "https://goal.com" + $(this).find("a").attr("href");
-        const title = $(this).find("h3").text();
-        const news_img = $(this).find("img").attr("src");
-        const modifiedTitle = title.replace(pattern, "");
-        const modifiedTitle2 = modifiedTitle.replace("CC", "");
-        const modifiedTitle3 = modifiedTitle2.replace(
-          "IG-leomessiIG-leomessiDear god",
-          ""
-        );
-
-        console.log(title, "88888");
-
-        if (url.includes("lists") && title !== "") {
-          news_array_goaldotcom.push({
-            url,
-            modifiedTitle3,
-            news_img,
-          });
-        }
-      });
-      res.json(news_array_goaldotcom);
-    })
-    .catch((err) => console.log(err));
-});
-
-router.get("/news/fourfourtwo/epl", (req, res) => {
-  axios
-    .get("https://www.fourfourtwo.com/premier-league")
-    .then((response) => {
-      const html = response.data;
-      const $ = cheerio.load(html);
-
-      $(".small", html).each(function (index, element) {
-        const url = $(element).find("a").attr("href");
-        const title = $(element).find("h3.article-name").text();
-        const imgSplitted = $(element).find("img").attr("data-srcset");
-        const img = imgSplitted ? imgSplitted.split(" ") : null;
-        const news_img = img ? img[0] : null;
-        const short_desc = $(element).find("p.synopsis").text()?.trim();
-        if (!url || !title) {
-          return;
-        }
-        news_array_fourfourtwo_epl.push({
-          url,
+    $("li").each(function () {
+      const href = $(this).find("a").attr("href");
+      const url = href ? `https://goal.com${href}` : null;
+      const title = $(this).find("h3").text().trim();
+      const news_img = $(this).find("img").attr("src");
+      if (!url || !title) return;
+      if (url.includes("lists")) {
+        const item = formatNewsItem({
           title,
-          news_img,
-          short_desc,
-        });
-      });
-
-      res.json(news_array_fourfourtwo_epl);
-    })
-    .catch((err) => console.log(err));
-});
-
-router.get("/news/fourfourtwo/laliga", (req, res) => {
-  axios
-    .get("https://www.fourfourtwo.com/la-liga")
-    .then((response) => {
-      const html = response.data;
-      const $ = cheerio.load(html);
-
-      $(".small", html).each(function (index, element) {
-        const url = $(element).find("a").attr("href");
-        const title = $(element).find("h3.article-name").text();
-        const imgSplitted = $(element).find("img").attr("data-srcset");
-        const img = imgSplitted ? imgSplitted.split(" ") : null;
-        const news_img = img ? img[0] : null;
-        const short_descc = $(element).find("p.synopsis").text()?.trim();
-        const short_desc = short_descc?.replace(/^La Liga\n|IN THE MAG\n/g, "");
-        if (!url || !title) {
-          return;
-        }
-        news_array_fourfourtwo_laliga.push({
           url,
-          title,
-          news_img,
-          short_desc,
+          image: news_img,
+          source: "GOAL"
         });
-      });
-
-      res.json(news_array_fourfourtwo_laliga);
-    })
-    .catch((err) => console.log(err));
+        news_array_goaldotcom.push(item);
+      }
+    });
+    setCache(cacheKey, news_array_goaldotcom, 5 * 60 * 1000);
+    successResponse(res, news_array_goaldotcom)
+  } catch (err) {
+    console.error("Error scraping Goal:", err.message);
+    errorResponse(res, err)
+  }
 });
 
-router.get("/news/fourfourtwo/ucl", (req, res) => {
-  axios
-    .get("https://www.fourfourtwo.com/champions-league")
-    .then((response) => {
-      const html = response.data;
-      const $ = cheerio.load(html);
+// FourFourTwo EPL
+router.get("/news/fourfourtwo/epl", async (req, res) => {
+  try {
+    const cacheKey = cacheKeys.fourfourtwopl;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return successResponse(res, cached, "cached");
+    }
+    news_array_fourfourtwo_epl.length = 0;
 
-      $(".small", html).each(function (index, element) {
-        const url = $(element).find("a").attr("href");
-        const title = $(element).find("h3.article-name").text();
-        const imgSplitted = $(element).find("img").attr("data-srcset");
-        const img = imgSplitted ? imgSplitted.split(" ") : null;
-        const news_img = img ? img[0] : null;
-        const short_descc = $(element).find("p.synopsis").text()?.trim();
-        const short_desc = short_descc?.replace(
-          /^La Liga\n|IN THE MAG\n|HOW TO WATCH\n/g,
-          ""
-        );
-        if (!url || !title) {
-          return;
-        }
-        news_array_fourfourtwo_ucl.push({
-          url,
-          title,
-          news_img,
-          short_desc,
-        });
+    const response = await axios.get(URLLISTS.fourfourtwopl);
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    $(".small").each(function (index, element) {
+      const url = $(element).find("a").attr("href");
+      const title = $(element).find("h3.article-name").text().trim();
+      const img = $(element).find("picture").find("img").attr('src');
+
+      if (!url || !title) return;
+      const item = formatNewsItem({
+        title,
+        url,
+        image: img,
+        source: "FourFourTwo"
       });
-
-      res.json(news_array_fourfourtwo_ucl);
-    })
-    .catch((err) => console.log(err));
+      news_array_fourfourtwo_epl.push(item);
+    });
+    setCache(cacheKey, news_array_fourfourtwo_epl, 5 * 60 * 1000);
+    successResponse(res, news_array_fourfourtwo_epl)
+  } catch (err) {
+    console.error("Error scraping FourFourTwo EPL:", err.message);
+    errorResponse(res, err)
+  }
 });
 
-router.get("/news/fourfourtwo/bundesliga", (req, res) => {
-  axios
-    .get("https://www.fourfourtwo.com/bundesliga")
-    .then((response) => {
-      const html = response.data;
-      const $ = cheerio.load(html);
+// FourFourTwo La Liga
+router.get("/news/fourfourtwo/laliga", async (req, res) => {
+  try {
+    const cacheKey = cacheKeys.fourfourtwolaliga;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return successResponse(res, cached, "cached");
+    }
+    news_array_fourfourtwo_laliga.length = 0;
 
-      $(".small", html).each(function (index, element) {
-        const url = $(element).find("a").attr("href");
-        const title = $(element).find("h3.article-name").text();
-        const imgSplitted = $(element).find("img").attr("data-srcset");
-        const img = imgSplitted ? imgSplitted.split(" ") : null;
-        const news_img = img ? img[0] : null;
-        const short_descc = $(element).find("p.synopsis").text()?.trim();
-        const short_desc = short_descc?.replace(
-          /^La Liga\n|IN THE MAG\n|HOW TO WATCH\n|EXCLUSIVE\n/g,
-          ""
-        );
-        if (!url || !title) {
-          return;
-        }
-        news_array_fourfourtwo_bundesliga.push({
-          url,
-          title,
-          news_img,
-          short_desc,
-        });
+    const response = await axios.get(URLLISTS.fourfourtwolaliga);
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    $(".small").each(function (_, element) {
+      const url = $(element).find("a").attr("href");
+      const title = $(element).find("h3.article-name").text().trim();
+      const img = $(element).find("picture").find("img").attr('src');
+
+      if (!url || !title) return;
+      const item = formatNewsItem({
+        title,
+        url,
+        image: img,
+        source: "FourFourTwo"
       });
-
-      res.json(news_array_fourfourtwo_bundesliga);
-    })
-    .catch((err) => console.log(err));
+      news_array_fourfourtwo_laliga.push(item);
+    });
+    setCache(cacheKey, news_array_fourfourtwo_laliga, 5 * 60 * 1000);
+    successResponse(res, news_array_fourfourtwo_laliga)
+  } catch (err) {
+    console.error("Error scraping FourFourTwo La Liga:", err.message);
+    errorResponse(res, err)
+  }
 });
 
-app.use("/api", router);
-module.exports.handler = serverless(app);
+// FourFourTwo UCL
+router.get("/news/fourfourtwo/ucl", async (req, res) => {
+  try {
+    const cacheKey = cacheKeys.fourfourtwoucl;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return successResponse(res, cached, "cached");
+    }
+    news_array_fourfourtwo_ucl.length = 0;
+
+    const response = await axios.get(URLLISTS.fourfourtwoucl);
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    $(".small").each(function (_, element) {
+      const url = $(element).find("a").attr("href");
+      const title = $(element).find("h3.article-name").text().trim();
+      const img = $(element).find("picture").find("img").attr('src');
+
+      if (!url || !title) return;
+      const item = formatNewsItem({
+        title,
+        url,
+        image: img,
+        source: "FourFourTwo"
+      });
+      news_array_fourfourtwo_ucl.push(item);
+    });
+    setCache(cacheKey, news_array_fourfourtwo_ucl, 5 * 60 * 1000);
+    successResponse(res, news_array_fourfourtwo_ucl)
+  } catch (err) {
+    console.error("Error scraping FourFourTwo UCL:", err.message);
+    errorResponse(res, err)
+  }
+});
+
+// FourFourTwo Bundesliga
+router.get("/news/fourfourtwo/bundesliga", async (req, res) => {
+  try {
+    const cacheKey = cacheKeys.fourfourtwobund;
+    const cached = getCache(cacheKey);
+    if (cached) {
+      return successResponse(res, cached, "cached");
+    }
+    news_array_fourfourtwo_bundesliga.length = 0;
+
+    const response = await axios.get(URLLISTS.fourfourtwobund);
+    const html = response.data;
+    const $ = cheerio.load(html);
+
+    $(".small").each(function (_, element) {
+      const url = $(element).find("a").attr("href");
+      const title = $(element).find("h3.article-name").text().trim();
+      const img = $(element).find("picture").find("img").attr('src');
+
+      if (!url || !title) return;
+      const item = formatNewsItem({
+        title,
+        url,
+        image: img,
+        source: "FourFourTwo"
+      });
+      news_array_fourfourtwo_bundesliga.push(item);
+    });
+    setCache(cacheKey, news_array_fourfourtwo_bundesliga, 5 * 60 * 1000);
+    successResponse(res, news_array_fourfourtwo_bundesliga)
+  } catch (err) {
+    console.error("Error scraping FourFourTwo Bundesliga:", err.message);
+    errorResponse(res, err)
+  }
+});
+
+app.use("/api/v2", router);
+app.use("/api/v2", limiter);
+// module.exports.handler = serverless(app);
+// module.exports = { handler: serverless(app), app };
+// middleware to log time,method and ip address from each request
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}`);
+});

@@ -15,6 +15,7 @@
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "express-rate-limit": "^8.1.0",
     "heroku": "^8.1.9",
     "netlify-cli": "^15.11.0",
     "netlify-lambda": "^2.0.16",
